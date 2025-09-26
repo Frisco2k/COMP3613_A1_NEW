@@ -1,34 +1,73 @@
-from App.models import User
 from App.database import db
+from App.models.student import Student
+from App.models.staff import Staff
+from App.models.employer import Employer
+from sqlalchemy.exc import IntegrityError
 
-def create_user(username, password):
-    newuser = User(username=username, password=password)
-    db.session.add(newuser)
-    db.session.commit()
-    return newuser
 
-def get_user_by_username(username):
-    result = db.session.execute(db.select(User).filter_by(username=username))
-    return result.scalar_one_or_none()
-
-def get_user(id):
-    return db.session.get(User, id)
-
-def get_all_users():
-    return db.session.scalars(db.select(User)).all()
-
-def get_all_users_json():
-    users = get_all_users()
-    if not users:
-        return []
-    users = [user.get_json() for user in users]
-    return users
-
-def update_user(id, username):
-    user = get_user(id)
-    if user:
-        user.username = username
-        # user is already in the session; no need to re-add
+def create_student(name):
+    existing = Student.query.filter_by(name=name).first()
+    if existing:
+        print(f"Error: Student with name '{name}' already exists (id={existing.id}).")
+        return None
+    s = Student(name=name)
+    db.session.add(s)
+    try:
         db.session.commit()
-        return True
-    return None
+    except IntegrityError:
+        db.session.rollback()
+        print(f"Error: Could not create student '{name}'. Name must be unique.")
+        return None
+    return s
+
+def create_staff(name):
+    existing = Staff.query.filter_by(name=name).first()
+    if existing:
+        print(f"Error: Staff with name '{name}' already exists (id={existing.id}).")
+        return None
+    s = Staff(name=name)
+    db.session.add(s)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        print(f"Error: Could not create staff '{name}'. Name must be unique.")
+        return None
+    return s
+
+def create_employer(company):
+    existing = Employer.query.filter_by(company=company).first()
+    if existing:
+        print(f"Error: Employer with company '{company}' already exists (id={existing.id}).")
+        return None
+    e = Employer(company=company)
+    db.session.add(e)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        print(f"Error: Could not create employer '{company}'. Company must be unique.")
+        return None
+    return e
+
+
+def get_student(name):
+    return Student.query.filter_by(name=name.strip()).first()
+
+def get_staff(name):
+    return Staff.query.filter_by(name=name.strip()).first()
+
+def get_staff_by_id(staff_id):
+    return Staff.query.get(staff_id)
+
+def get_employer(company):
+    return Employer.query.filter_by(company=company.strip()).first()
+
+def list_students():
+    return Student.query.order_by(Student.name.asc()).all()
+
+def list_staff():
+    return Staff.query.order_by(Staff.name.asc()).all()
+
+def list_employers():
+    return Employer.query.order_by(Employer.company.asc()).all()

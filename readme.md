@@ -1,188 +1,143 @@
-![Tests](https://github.com/uwidcit/flaskmvc/actions/workflows/dev.yml/badge.svg)
+# Internship Management CLI
 
-# Flask MVC Template
-A template for flask applications structured in the Model View Controller pattern [Demo](https://dcit-flaskmvc.herokuapp.com/). [Postman Collection](https://documenter.getpostman.com/view/583570/2s83zcTnEJ)
+This project provides a simple Flask + SQLAlchemy command-line interface (CLI) to manage **students**, **staff**, **employers**, and **internship positions**.
 
+---
 
-# Dependencies
-* Python3/pip3
-* Packages listed in requirements.txt
+## Setup
 
-# Installing Dependencies
+1. Clone the repository and install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Set the Flask app environment variable:
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:FLASK_APP="wsgi:app"
+   ```
+
+   **Linux/Mac (bash/zsh):**
+   ```bash
+   export FLASK_APP=wsgi:app
+   ```
+
+3. Initialize or reset the database:
+
+   ```bash
+   flask reset-db   # Drops and recreates all tables
+   flask init-db    # Creates tables and seeds initial data
+   ```
+
+---
+
+## Commands
+
+### Student Commands
+
+**Create a student**
 ```bash
-$ pip install -r requirements.txt
+flask student create <name>
 ```
-
-# Configuration Management
-
-
-Configuration information such as the database url/port, credentials, API keys etc are to be supplied to the application. However, it is bad practice to stage production information in publicly visible repositories.
-Instead, all config is provided by a config file or via [environment variables](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/).
-
-## In Development
-
-When running the project in a development environment (such as gitpod) the app is configured via default_config.py file in the App folder. By default, the config for development uses a sqlite database.
-
-default_config.py
-```python
-SQLALCHEMY_DATABASE_URI = "sqlite:///temp-database.db"
-SECRET_KEY = "secret key"
-JWT_ACCESS_TOKEN_EXPIRES = 7
-ENV = "DEVELOPMENT"
-```
-
-These values would be imported and added to the app in load_config() function in config.py
-
-config.py
-```python
-# must be updated to inlude addtional secrets/ api keys & use a gitignored custom-config file instad
-def load_config():
-    config = {'ENV': os.environ.get('ENV', 'DEVELOPMENT')}
-    delta = 7
-    if config['ENV'] == "DEVELOPMENT":
-        from .default_config import JWT_ACCESS_TOKEN_EXPIRES, SQLALCHEMY_DATABASE_URI, SECRET_KEY
-        config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-        config['SECRET_KEY'] = SECRET_KEY
-        delta = JWT_ACCESS_TOKEN_EXPIRES
-...
-```
-
-## In Production
-
-When deploying your application to production/staging you must pass
-in configuration information via environment tab of your render project's dashboard.
-
-![perms](./images/fig1.png)
-
-# Flask Commands
-
-wsgi.py is a utility script for performing various tasks related to the project. You can use it to import and test any code in the project. 
-You just need create a manager command function, for example:
-
-```python
-# inside wsgi.py
-
-user_cli = AppGroup('user', help='User object commands')
-
-@user_cli.cli.command("create-user")
-@click.argument("username")
-@click.argument("password")
-def create_user_command(username, password):
-    create_user(username, password)
-    print(f'{username} created!')
-
-app.cli.add_command(user_cli) # add the group to the cli
-
-```
-
-Then execute the command invoking with flask cli with command name and the relevant parameters
-
+Example:
 ```bash
-$ flask user create bob bobpass
+flask student create John
 ```
 
-
-# Running the Project
-
-_For development run the serve command (what you execute):_
+**View a student’s shortlists**
 ```bash
-$ flask run
+flask student my-shortlists <student_name>
 ```
-
-_For production using gunicorn (what the production server executes):_
+Example:
 ```bash
-$ gunicorn wsgi:app
+flask student my-shortlists John
 ```
 
-# Deploying
-You can deploy your version of this app to render by clicking on the "Deploy to Render" link above.
+---
 
-# Initializing the Database
-When connecting the project to a fresh empty database ensure the appropriate configuration is set then file then run the following command. This must also be executed once when running the app on heroku by opening the heroku console, executing bash and running the command in the dyno.
+### Staff Commands
 
+**Create a staff member**
 ```bash
-$ flask init
+flask staff create <name>
 ```
-
-# Database Migrations
-If changes to the models are made, the database must be'migrated' so that it can be synced with the new models.
-Then execute following commands using manage.py. More info [here](https://flask-migrate.readthedocs.io/en/latest/)
-
+Example:
 ```bash
-$ flask db init
-$ flask db migrate
-$ flask db upgrade
-$ flask db --help
+flask staff create Alice
 ```
 
-# Testing
-
-## Unit & Integration
-Unit and Integration tests are created in the App/test. You can then create commands to run them. Look at the unit test command in wsgi.py for example
-
-```python
-@test.command("user", help="Run User tests")
-@click.argument("type", default="all")
-def user_tests_command(type):
-    if type == "unit":
-        sys.exit(pytest.main(["-k", "UserUnitTests"]))
-    elif type == "int":
-        sys.exit(pytest.main(["-k", "UserIntegrationTests"]))
-    else:
-        sys.exit(pytest.main(["-k", "User"]))
-```
-
-You can then execute all user tests as follows
-
+**List all staff**
 ```bash
-$ flask test user
+flask staff list
 ```
 
-You can also supply "unit" or "int" at the end of the comand to execute only unit or integration tests.
-
-You can run all application tests with the following command
-
+**Shortlist a student for a position**
 ```bash
-$ pytest
+flask staff shortlist-add <staff_id> <student_name> <position_id>
 ```
-
-## Test Coverage
-
-You can generate a report on your test coverage via the following command
-
+Example:
 ```bash
-$ coverage report
+flask staff shortlist-add 1 John 2
 ```
 
-You can also generate a detailed html report in a directory named htmlcov with the following comand
+---
 
+### Employer Commands
+
+**Create an employer**
 ```bash
-$ coverage html
+flask employer create <company>
+```
+Example:
+```bash
+flask employer create "Tech Corp"
 ```
 
-# Troubleshooting
-
-## Views 404ing
-
-If your newly created views are returning 404 ensure that they are added to the list in main.py.
-
-```python
-from App.views import (
-    user_views,
-    index_views
-)
-
-# New views must be imported and added to this list
-views = [
-    user_views,
-    index_views
-]
+**Create a position for an employer**
+```bash
+flask employer create-position <company> <title> <description>
+```
+Example:
+```bash
+flask employer create-position "Tech Corp" "Backend Intern" "Work with APIs"
 ```
 
-## Cannot Update Workflow file
+**List positions**
+```bash
+flask employer list
+flask employer list <company>
+```
+Examples:
+```bash
+flask employer list
+flask employer list "Tech Corp"
+```
 
-If you are running into errors in gitpod when updateding your github actions file, ensure your [github permissions](https://gitpod.io/integrations) in gitpod has workflow enabled ![perms](./images/gitperms.png)
+**View shortlist for a position**
+```bash
+flask employer shortlist <company> <position_id>
+```
+Example:
+```bash
+flask employer shortlist "Tech Corp" 3
+```
 
-## Database Issues
+**Accept a student from a shortlist**
+```bash
+flask employer accept <company> <shortlist_id>
+```
+Example:
+```bash
+flask employer accept "Tech Corp" 1
+```
 
-If you are adding models you may need to migrate the database with the commands given in the previous database migration section. Alternateively you can delete you database file.
+**Reject a student from a shortlist**
+```bash
+flask employer reject <company> <shortlist_id>
+```
+Example:
+```bash
+flask employer reject "Tech Corp" 1
+```
